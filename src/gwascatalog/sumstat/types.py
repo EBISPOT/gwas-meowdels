@@ -41,7 +41,6 @@ Beta = Annotated[
     float,
     Field(
         description="Effect size of numeric traits",
-        default=None,
     ),
     BeforeValidator(coerce_na_to_none),
 ]
@@ -66,7 +65,7 @@ EffectAlleleFrequency = Annotated[
         description="Frequency of the effect allele in the control population",
         # TODO: are 0/1 included or excluded?
         ge=0,
-        le=0,
+        le=1,
     ),
 ]
 
