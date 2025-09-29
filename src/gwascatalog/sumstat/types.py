@@ -1,30 +1,14 @@
-from enum import Enum
-from typing import Annotated, Optional, Any, Final, Mapping
+from __future__ import annotations
+
+from typing import Annotated, Optional
 
 from pydantic import Field, BeforeValidator, AfterValidator
 
+from ._type_funcs import chromosome_to_integer, is_valid_sequence, coerce_na_to_none
+from .enums import RefAlleleState
 
-# SNPs
 # https://www.ebi.ac.uk/gwas/docs/summary-statistics-format
 
-CHROMOSOME_MAP: Final[Mapping[str, int]] = {"X": 23, "Y": 24, "MT": 25}
-
-
-def chromosome_to_integer(chromosome: Any) -> int:
-    """Remap chromosomes to integers"""
-    chrom_string = str(chromosome).strip()
-    try:
-        chrom = int(chrom_string)
-    except ValueError:
-        try:
-            chrom = CHROMOSOME_MAP[chrom_string]
-        except KeyError as bad_remap:
-            raise ValueError(f"Invalid chromosome {chromosome}") from bad_remap
-
-    return chrom
-
-
-# variant information
 Chromosome = Annotated[
     int,
     Field(description="Chromosome where the variant is located", ge=1, le=26),
@@ -39,15 +23,6 @@ BasePairLocation = Annotated[
     ),
 ]
 
-VALID_ALLELES: Final[frozenset[str]] = frozenset(["A", "C", "T", "G"])
-
-
-def is_valid_sequence(allele: str) -> str:
-    if bad_allele := set(allele) - VALID_ALLELES:
-        raise ValueError(f"Invalid allele: {bad_allele}")
-    return allele
-
-
 EffectAllele = Annotated[
     str,
     Field(description="The allele associated with the effect", min_length=1),
@@ -60,14 +35,7 @@ OtherAllele = Annotated[
     AfterValidator(is_valid_sequence),
 ]
 
-
 # effect size measurements
-def coerce_na_to_none(x: Any) -> Any:
-    """R's default missing value is NA"""
-    if x == "NA" or x == "#NA":
-        return None
-    return x
-
 
 Beta = Annotated[
     float,
@@ -77,7 +45,6 @@ Beta = Annotated[
     ),
     BeforeValidator(coerce_na_to_none),
 ]
-
 
 OddsRatio = Annotated[
     float,
@@ -103,7 +70,6 @@ EffectAlleleFrequency = Annotated[
     ),
 ]
 
-
 PValue = Annotated[
     float,
     Field(
@@ -112,7 +78,6 @@ PValue = Annotated[
         le=1,
     ),
 ]
-
 
 NegLog10PValue = Annotated[
     float,
@@ -166,11 +131,6 @@ CI_Upper = Annotated[
 CI_Lower = Annotated[
     float, Field(description="Lower confidence interval for the odds ratio", ge=0)
 ]
-
-
-class RefAlleleState(Enum, str):
-    EFFECT_ALLELE = "EA"
-    OTHER_ALLELE = "OA"
 
 
 RefAllele = Annotated[
